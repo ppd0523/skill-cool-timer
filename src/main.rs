@@ -1,4 +1,5 @@
 use std::io;
+use std::io::BufRead;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::time::{Duration, Instant};
 
@@ -15,7 +16,110 @@ use ratatui::symbols::border;
 use rdev::{self, simulate, SimulateError};
 
 const TICK_RATE: u64 = 100;  // 1 tick : 50 ms
-const KEY_INPUT_DELAY: u64 = 10;
+const KEY_INPUT_DELAY: u64 = 15;
+
+
+fn key_press_skill_P() {
+    simulate(&rdev::EventType::KeyPress(rdev::Key::ShiftLeft));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::KeyZ));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::KeyZ));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::ShiftLeft));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    std::thread::sleep(Duration::from_millis(50));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::ShiftLeft));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::KeyP));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::KeyP));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::ShiftLeft));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::Kp4));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::Kp4));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    std::thread::sleep(Duration::from_millis(100));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::Return));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::Return));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+}
+
+fn key_press_skill_m() {
+    simulate(&rdev::EventType::KeyPress(rdev::Key::ShiftLeft));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::KeyZ));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::KeyZ));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::ShiftLeft));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    std::thread::sleep(Duration::from_millis(50));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::KeyM));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::KeyM));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+}
+
+fn key_press_item_n() {
+    simulate(&rdev::EventType::KeyPress(rdev::Key::ControlLeft));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::KeyN));
+    std::thread::sleep(Duration::from_millis(5));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::KeyN));
+    std::thread::sleep(Duration::from_millis(5));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::ControlLeft));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+}
+
+fn key_press_paste() {
+    simulate(&rdev::EventType::KeyPress(rdev::Key::ControlLeft));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::KeyV));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::KeyV));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::ControlLeft));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    std::thread::sleep(Duration::from_millis(50));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::Return));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::Return));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+}
+
+
 
 fn main() -> io::Result<()> {
     let (tx_skill, rx_skill): (Sender<Keycode>, Receiver<_>) = channel();
@@ -42,23 +146,42 @@ fn main() -> io::Result<()> {
             Keycode::Right |
             Keycode::Up |
             Keycode::Down => {}
-            Keycode::F11 => {
+            Keycode::F8 => {
                 std::thread::spawn(move || {
-                    clipboard.set_contents("abcd".to_owned()).unwrap();
-                    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+                    if let Ok(file) = std::fs::File::open("id.txt") {
+                        let reader = std::io::BufReader::new(file);
 
-                    simulate(&rdev::EventType::KeyPress(rdev::Key::MetaLeft));
-                    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
-                    simulate(&rdev::EventType::KeyPress(rdev::Key::KeyV));
-                    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
-                    simulate(&rdev::EventType::KeyRelease(rdev::Key::MetaLeft));
-                    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
-                    simulate(&rdev::EventType::KeyRelease(rdev::Key::KeyV));
+                        if let Some(first_line) = reader.lines().nth(0) {
+                            if let Ok(first) = first_line {
+                                if clipboard.set_contents(first.to_owned()).is_ok() {
+                                    key_press_item_n();
+                                    std::thread::sleep(Duration::from_millis(100));
+                                    key_press_skill_m();
+                                    std::thread::sleep(Duration::from_millis(50));
+                                    key_press_paste();
+                                }
+                            }
+                        }
+                    }
                 });
             }
-            Keycode::F12 => {
+            Keycode::F9 => {
                 std::thread::spawn(move || {
-                    clipboard.set_contents("1234".to_owned()).unwrap();
+                    if let Ok(file) = std::fs::File::open("id.txt") {
+                        let reader = std::io::BufReader::new(file);
+
+                        if let Some(first_line) = reader.lines().nth(1) {
+                            if let Ok(first) = first_line {
+                                if clipboard.set_contents(first.to_owned()).is_ok() {
+                                    key_press_skill_P();
+                                    std::thread::sleep(Duration::from_millis(100));
+                                    key_press_skill_m();
+                                    std::thread::sleep(Duration::from_millis(50));
+                                    key_press_paste();
+                                }
+                            }
+                        }
+                    }
                 });
             }
             _ => {
