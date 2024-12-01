@@ -15,8 +15,78 @@ use ratatui::symbols::border;
 
 use rdev::{self, simulate, SimulateError};
 
-const TICK_RATE: u64 = 100;  // 1 tick : 50 ms
-const KEY_INPUT_DELAY: u64 = 15;
+const KEY_INPUT_DELAY: u64 = 20;
+
+
+fn key_press_say_macro() {
+    simulate(&rdev::EventType::KeyPress(rdev::Key::Alt));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::Kp1));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::Kp1));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    std::thread::sleep(Duration::from_millis(20));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::Kp3));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::Kp3));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::Alt));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+}
+
+fn key_press_skill_O() {
+    simulate(&rdev::EventType::KeyPress(rdev::Key::ShiftLeft));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::KeyZ));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::KeyZ));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::ShiftLeft));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    std::thread::sleep(Duration::from_millis(50));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::ShiftLeft));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::KeyO));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::KeyO));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::ShiftLeft));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::KeyD));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::KeyD));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::KeyN));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::KeyN));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    std::thread::sleep(Duration::from_millis(100));
+
+    simulate(&rdev::EventType::KeyPress(rdev::Key::Return));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+
+    simulate(&rdev::EventType::KeyRelease(rdev::Key::Return));
+    std::thread::sleep(Duration::from_millis(KEY_INPUT_DELAY));
+}
 
 
 fn key_press_skill_P() {
@@ -146,6 +216,15 @@ fn main() -> io::Result<()> {
             Keycode::Right |
             Keycode::Up |
             Keycode::Down => {}
+            Keycode::F7 => {
+                std::thread::spawn(move || {
+                    key_press_skill_O();
+                    std::thread::sleep(Duration::from_millis(500));
+                    key_press_say_macro();
+                    std::thread::sleep(Duration::from_millis(500));
+                    key_press_say_macro();
+                });
+            }
             Keycode::F8 => {
                 std::thread::spawn(move || {
                     if let Ok(file) = std::fs::File::open("id.txt") {
@@ -155,9 +234,9 @@ fn main() -> io::Result<()> {
                             if let Ok(first) = first_line {
                                 if clipboard.set_contents(first.to_owned()).is_ok() {
                                     key_press_item_n();
-                                    std::thread::sleep(Duration::from_millis(100));
+                                    std::thread::sleep(Duration::from_millis(500));
                                     key_press_skill_m();
-                                    std::thread::sleep(Duration::from_millis(50));
+                                    std::thread::sleep(Duration::from_millis(100));
                                     key_press_paste();
                                 }
                             }
@@ -174,9 +253,10 @@ fn main() -> io::Result<()> {
                             if let Ok(first) = first_line {
                                 if clipboard.set_contents(first.to_owned()).is_ok() {
                                     key_press_skill_P();
-                                    std::thread::sleep(Duration::from_millis(100));
+                                    //key_press_item_n();
+                                    std::thread::sleep(Duration::from_millis(500));
                                     key_press_skill_m();
-                                    std::thread::sleep(Duration::from_millis(50));
+                                    std::thread::sleep(Duration::from_millis(100));
                                     key_press_paste();
                                 }
                             }
