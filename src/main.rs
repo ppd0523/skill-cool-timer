@@ -1,6 +1,6 @@
 use std::io;
 use std::sync::mpsc::{Receiver, Sender, channel};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use clipboard::{ClipboardProvider, ClipboardContext};
 use device_query::{DeviceEvents, DeviceState, Keycode};
@@ -18,7 +18,6 @@ const TICK_RATE: u64 = 100;  // 1 tick : 50 ms
 const KEY_INPUT_DELAY: u64 = 10;
 
 fn main() -> io::Result<()> {
-    let (tx_tick, rx_tick): (Sender<()>, Receiver<()>) = channel();
     let (tx_skill, rx_skill): (Sender<Keycode>, Receiver<_>) = channel();
 
     let device_state = DeviceState::new();
@@ -68,67 +67,54 @@ fn main() -> io::Result<()> {
         }
     });
 
-    let thread = std::thread::spawn(move || {
-        let tick_rate = Duration::from_millis(TICK_RATE);
-
-        loop {
-            std::thread::sleep(tick_rate);
-            tx_tick.send(()).unwrap();
-        }
-    });
-
     let mut terminal = ratatui::init();
-    let app_result = App::default().run(&mut terminal, &rx_tick, &rx_skill);
+    let app_result = App::default().run(&mut terminal, &rx_skill);
 
     ratatui::restore();
-
-    thread.join().unwrap();
 
     app_result
 }
 
 struct App {
     tab: bool,
-    init_time: Duration,
     cool_time: Duration,
+    fired_at: Instant,
     exit: bool,
 }
 impl Default for App {
     fn default() -> Self {
         App {
             tab: false,
-            init_time: Duration::from_millis(10_500),
-            cool_time: Duration::from_millis(0),
+            cool_time: Duration::from_millis(10_250),
+            fired_at: Instant::now() - Duration::from_millis(10_250),
             exit: false,
         }
     }
 }
 
 impl App {
-    pub fn run(&mut self, terminal: &mut DefaultTerminal, rx_tick: &Receiver<()>, rx_skill: &Receiver<Keycode>) -> io::Result<()> {
+    pub fn run(&mut self, terminal: &mut DefaultTerminal, rx_skill: &Receiver<Keycode>) -> io::Result<()> {
         while !self.exit {
-            self.handle_event()?;
-
-            if rx_tick.try_recv().is_ok() {
-                self.cool_time = self.cool_time
-                    .checked_sub(Duration::from_millis(TICK_RATE))
-                    .unwrap_or(Duration::from_millis(0));
-            }
+            // self.handle_event()?;
 
             if let Ok(skill) = rx_skill.try_recv() {
-                if skill == Keycode::Enter {
-                    if self.tab && self.cool_time < Duration::from_millis(TICK_RATE)
-                    {
-                        self.cool_time = self.init_time;
+                match skill {
+                    Keycode::Enter => {
+                        let duration = Instant::now().saturating_duration_since(self.fired_at);
+                        if self.tab && duration >= self.cool_time
+                        {
+                            self.fired_at = Instant::now();
+                            self.tab = false;
+                        }
+                    }
+                    Keycode::Key1 => {
+                        self.tab = true;
+                    }
+                    Keycode::Escape => {
                         self.tab = false;
                     }
-
-                } else if skill == Keycode::Key1 {
-                    self.tab = true;
-                } else if skill == Keycode::Escape {
-                    self.tab = false;
-                }
-
+                    _ => {}
+                };
             }
 
             terminal.draw(|frame| {
@@ -144,11 +130,6 @@ impl App {
     }
 
     fn handle_event(&mut self) -> io::Result<()> {
-        // if let event::Event::Key(key) = event::()? {
-        //     if let event::KeyCode::Char('q') = key.code {
-        //         self.exit = true;
-        //     }
-        // }
 
         Ok(())
     }
@@ -172,13 +153,15 @@ impl Widget for &App {
             .title_bottom(footer.right_aligned())
             .border_set(border::ROUNDED);
 
-        let ratio = self.cool_time.as_millis() as f64 / self.init_time.as_millis() as f64;
+        let duration = Instant::now().saturating_duration_since(self.fired_at);
+        let rest = self.cool_time.checked_sub(duration).unwrap_or(Duration::from_millis(0));
+
+        let ratio = rest.as_millis() as f64 / self.cool_time.as_millis() as f64;
         let label = Span::styled(format!(
             "{:2}.{:1}s",
-            self.cool_time.as_secs(),
-            self.cool_time.subsec_millis() / 100,
+            rest.as_secs(),
+            rest.subsec_millis() / 100,
         ), Style::default().fg(Color::White));
-
 
         let block = Block::bordered()
             .title(" Hellfire Cool Time ")
